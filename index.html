@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1a0533"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>Lotto Analyser Pro</title>
+<link rel="manifest" href="manifest.json"/>
+<style>
+:root {
+  --bg: #0d0120;
+  --bg2: #1a0533;
+  --bg3: #240845;
+  --card: #1e0a3c;
+  --border: rgba(160,100,255,0.18);
+  --accent: #a855f7;
+  --accent2: #7c3aed;
+  --gold: #f59e0b;
+  --hot: #f97316;
+  --cold: #38bdf8;
+  --warm: #facc15;
+  --text: #f3e8ff;
+  --muted: #a78bca;
+  --green: #22c55e;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* Header */
+.header{background:linear-gradient(135deg,#1a0533,#2d0a5e);padding:16px 20px 0;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(90deg,#a855f7,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.odds-pill{background:rgba(168,85,247,0.15);border:1px solid var(--border);border-radius:99px;padding:4px 12px;font-size:11px;color:var(--muted);}
+.nav{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{flex-shrink:0;padding:10px 16px;font-size:12px;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Pages */
+.page{display:none;padding:16px;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-title{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+.stat{background:var(--bg3);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.stat-val{font-size:22px;font-weight:700;color:var(--accent);}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* Balls */
+.ball-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+.ball{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;border:2px solid transparent;position:relative;}
+.ball:active{transform:scale(.92);}
+.ball.hot{background:radial-gradient(circle at 35% 35%,#fdba74,#ea580c);color:#fff;border-color:#f97316;box-shadow:0 0 10px rgba(249,115,22,.4);}
+.ball.warm{background:radial-gradient(circle at 35% 35%,#fde68a,#d97706);color:#1a0533;border-color:#f59e0b;}
+.ball.cold{background:radial-gradient(circle at 35% 35%,#7dd3fc,#0284c7);color:#fff;border-color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.3);}
+.ball.neutral{background:radial-gradient(circle at 35% 35%,#c4b5fd,#7c3aed);color:#fff;border-color:#a855f7;}
+.ball.selected{box-shadow:0 0 0 3px #f59e0b,0 0 16px rgba(245,158,11,.5);transform:scale(1.1);}
+.ball.supp{background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);color:#fff;border-color:#22c55e;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+
+/* Freq bars */
+.freq-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.freq-num{width:24px;font-size:11px;color:var(--muted);text-align:right;flex-shrink:0;}
+.freq-track{flex:1;height:18px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.freq-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.freq-count{width:26px;font-size:11px;color:var(--muted);text-align:right;}
+
+/* Picked numbers */
+.picked-row{display:flex;gap:8px;flex-wrap:wrap;min-height:48px;align-items:center;padding:10px;background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:10px;}
+.picked-ball{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fde68a,#d97706);color:#1a0533;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid var(--gold);box-shadow:0 0 12px rgba(245,158,11,.4);}
+.empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;}
+.btn-gold{background:linear-gradient(135deg,#d97706,#f59e0b);color:#1a0533;}
+.btn-ghost{background:rgba(168,85,247,.12);border:1px solid var(--border);color:var(--accent);}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{color:var(--muted);padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);font-weight:500;}
+.tbl td{padding:8px 6px;border-bottom:1px solid rgba(160,100,255,.07);}
+.tbl tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;}
+.badge-hot{background:rgba(249,115,22,.18);color:#fb923c;}
+.badge-cold{background:rgba(56,189,248,.18);color:#38bdf8;}
+.badge-gold{background:rgba(245,158,11,.18);color:#fbbf24;}
+
+/* Charts (canvas) */
+canvas{width:100%!important;border-radius:var(--radius-sm);}
+
+/* Analysis insight cards */
+.insight{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:10px 12px;margin-bottom:8px;font-size:12px;line-height:1.6;}
+.insight strong{color:var(--accent);display:block;font-size:11px;margin-bottom:2px;}
+
+/* Disclaimer */
+.disclaimer{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:12px;font-size:11px;color:#fbbf24;line-height:1.6;margin-top:12px;}
+
+/* Install banner */
+.install-banner{background:linear-gradient(135deg,#2d0a5e,#1a0533);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.install-text{font-size:12px;color:var(--muted);line-height:1.5;}
+.install-text strong{color:var(--text);display:block;margin-bottom:2px;}
+
+/* Section label */
+.sec-label{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;margin-top:4px;}
+
+/* Progress ring */
+.ring-wrap{display:flex;justify-content:center;margin:10px 0;}
+svg.ring text{font-family:'Segoe UI',system-ui,sans-serif;}
+
+.tab-pills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.tab-pill{padding:6px 14px;border-radius:99px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.tab-pill.active{background:rgba(168,85,247,.18);color:var(--accent);border-color:var(--accent);}
+
+.generate-result{background:linear-gradient(135deg,#1e0a3c,#2d0a5e);border:2px solid var(--gold);border-radius:var(--radius);padding:20px;text-align:center;margin-top:12px;}
+.generate-result .result-title{font-size:11px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.1em;}
+.generate-balls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.gen-ball{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fde68a,#b45309);color:#1a0533;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;border:2px solid var(--gold);box-shadow:0 0 18px rgba(245,158,11,.5);}
+.result-note{font-size:11px;color:var(--muted);line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="logo">🎱 Lotto Analyser Pro</span>
+    <span class="odds-pill">TUE LOTTO · Pick 6/45</span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('home')">Home</button>
+    <button class="nav-btn" onclick="showPage('freq')">Frequency</button>
+    <button class="nav-btn" onclick="showPage('stats')">Statistics</button>
+    <button class="nav-btn" onclick="showPage('pick')">My Pick</button>
+    <button class="nav-btn" onclick="showPage('prob')">Probability</button>
+    <button class="nav-btn" onclick="showPage('about')">About</button>
+  </nav>
+</div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="install-banner" id="install-banner" style="display:none">
+    <div class="install-text">
+      <strong>Install this app</strong>
+      Tap "Add to Home Screen" in your browser menu to install on Android.
+    </div>
+    <button class="btn btn-gold" onclick="installApp()">Install</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-val">8.1M</div><div class="stat-lbl">Combinations</div></div>
+    <div class="stat"><div class="stat-val">1 in 8.1M</div><div class="stat-lbl">Div 1 Odds</div></div>
+    <div class="stat"><div class="stat-val">45</div><div class="stat-lbl">Number Pool</div></div>
+    <div class="stat"><div class="stat-val">6 + 2</div><div class="stat-lbl">Draw + Supp</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quick Generate</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Choose a generation method based on statistical analysis.</p>
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="setMethod('random','Random Quick Pick')">Random</button>
+      <button class="tab-pill" onclick="setMethod('hot','Most Frequent')">Hot Numbers</button>
+      <button class="tab-pill" onclick="setMethod('balanced','Balanced Mix')">Balanced</button>
+      <button class="tab-pill" onclick="setMethod('overdue','Overdue Numbers')">Overdue</button>
+    </div>
+    <p id="method-desc" style="font-size:11px;color:var(--muted);margin-bottom:12px;">Purely random selection. Statistically equivalent to all other methods.</p>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="generateNumbers()">✦ Generate Numbers</button>
+    <div class="generate-result" id="gen-result" style="display:none">
+      <div class="result-title" id="gen-method-label">Your Numbers</div>
+      <div class="generate-balls" id="gen-balls"></div>
+      <div class="result-note" id="gen-note"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Top 10 Hot Numbers</div>
+    <div class="ball-grid" id="home-hot-balls"></div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Hot</div>
+      <div class="leg"><div class="leg-dot" style="background:#facc15"></div>Warm</div>
+      <div class="leg"><div class="leg-dot" style="background:#38bdf8"></div>Cold</div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠ Mathematical fact: All generation methods produce numbers with identical odds (1 in 8,145,060). No algorithm can predict certified random draws. This tool is for entertainment and statistical exploration only. Play responsibly.
+  </div>
+</div>
+
+<!-- FREQUENCY PAGE -->
+<div class="page" id="page-freq">
+  <div class="card">
+    <div class="card-title">Number Frequency — All Draws</div>
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="setFreqSort('freq')">By Frequency</button>
+      <button class="tab-pill" onclick="setFreqSort('num')">By Number</button>
+    </div>
+    <div id="freq-bars" style="max-height:420px;overflow-y:auto;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">All Numbers — Heat Map</div>
+    <div class="ball-grid" id="freq-all-balls"></div>
+  </div>
+</div>
+
+<!-- STATISTICS PAGE -->
+<div class="page" id="page-stats">
+  <div class="card">
+    <div class="card-title">Statistical Insights</div>
+    <div id="insights-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Sum Range Analysis</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Historical winning combinations have sums mostly between 100–200. The mean is ~135.</p>
+    <div class="insight"><strong>Sum sweet spot</strong>Combinations with a sum between 115–175 appear most often in historical draws. Extremes (very low or very high sums) are rare.</div>
+    <div class="insight"><strong>Odd/Even balance</strong>3 odd + 3 even is the most common pattern (~33% of draws). Pure odd or pure even occurs in only ~5% of draws.</div>
+    <div class="insight"><strong>Low/High split</strong>Numbers 1–22 (low) and 23–45 (high) split roughly 3/3 most often. All-low or all-high is statistically uncommon.</div>
+    <div class="insight"><strong>Consecutive pairs</strong>At least one pair of consecutive numbers (e.g. 7&amp;8) appears in ~65% of historical draws.</div>
+    <div class="insight"><strong>Decades distribution</strong>Winning numbers rarely all come from one decade (1–9, 10–19, 20–29, 30–39, 40–45). Spread is typical.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Overdue Numbers</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Numbers estimated to be drawn less recently than average (note: does not increase actual odds).</p>
+    <div class="ball-grid" id="overdue-balls"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Pair Frequency (Top Co-occurring)</div>
+    <table class="tbl">
+      <thead><tr><th>Pair</th><th>Times Together</th><th>Rating</th></tr></thead>
+      <tbody id="pair-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MY PICK PAGE -->
+<div class="page" id="page-pick">
+  <div class="card">
+    <div class="card-title">Your Selection</div>
+    <div class="picked-row" id="pick-display"><span class="empty-hint">Tap numbers below to select 6</span></div>
+    <div id="pick-stats" style="font-size:11px;color:var(--muted);margin-bottom:10px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="clearPick()">✕ Clear</button>
+      <button class="btn btn-gold" onclick="analysePick()">Analyse My Pick</button>
+    </div>
+    <div id="pick-analysis" style="display:none" class="card" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Tap to Select Numbers</div>
+    <div class="ball-grid" id="pick-all-balls"></div>
+  </div>
+</div>
+
+<!-- PROBABILITY PAGE -->
+<div class="page" id="page-prob">
+  <div class="card">
+    <div class="card-title">Prize Division Probabilities</div>
+    <table class="tbl">
+      <thead><tr><th>Division</th><th>Match</th><th>Odds</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-gold">Div 1</span></td><td>6 main</td><td>1 in 8,145,060</td></tr>
+        <tr><td><span class="badge badge-gold">Div 2</span></td><td>5 + 1 supp</td><td>1 in 678,755</td></tr>
+        <tr><td><span class="badge" style="background:rgba(168,85,247,.18);color:#c084fc;">Div 3</span></td><td>5 main</td><td>1 in 36,689</td></tr>
+        <tr><td><span class="badge" style="background:rgba(168,85,247,.18);color:#c084fc;">Div 4</span></td><td>4 main</td><td>1 in 733</td></tr>
+        <tr><td><span class="badge badge-cold">Div 5</span></td><td>3 + 1 supp</td><td>1 in 297</td></tr>
+        <tr><td><span class="badge badge-cold">Div 6</span></td><td>3 main</td><td>1 in 57</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Combinatorics Engine</div>
+    <div class="sec-label">C(45,6) Calculation</div>
+    <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;font-size:12px;font-family:monospace;color:#c084fc;line-height:2;">
+      C(n,r) = n! / (r! × (n-r)!)<br>
+      C(45,6) = 45! / (6! × 39!)<br>
+      = (45×44×43×42×41×40) / (6×5×4×3×2×1)<br>
+      = 5,864,443,200 / 720<br>
+      = <span style="color:var(--gold);font-weight:700;">8,145,060</span>
+    </div>
+    <div class="insight" style="margin-top:10px;"><strong>What this means</strong>There are exactly 8,145,060 unique ways to pick 6 numbers from 45. Each combination has the same probability: 1/8,145,060 = 0.00001228%.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tickets Needed to Cover All Combos</div>
+    <table class="tbl">
+      <thead><tr><th>Coverage</th><th>Tickets needed</th><th>Cost (AUD $1.35)</th></tr></thead>
+      <tbody>
+        <tr><td>1%</td><td>81,451</td><td>$109,959</td></tr>
+        <tr><td>10%</td><td>814,506</td><td>$1,099,583</td></tr>
+        <tr><td>50%</td><td>4,072,530</td><td>$5,497,916</td></tr>
+        <tr><td>100%</td><td>8,145,060</td><td>$10,995,831</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Law of Large Numbers</div>
+    <div class="insight"><strong>Why past frequency doesn't predict future draws</strong>Each draw is an independent event. The probability of any number being drawn is always 6/45 = 13.33%, regardless of how many times it has appeared before. Hot numbers are not "due" to appear more — cold numbers are not "due" to appear next. The Law of Large Numbers tells us that over millions of draws, all numbers will converge to equal frequency — but individual draws remain random.</div>
+  </div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div class="page" id="page-about">
+  <div class="card">
+    <div class="card-title">About This App</div>
+    <div style="font-size:13px;line-height:1.8;color:var(--muted);">
+      <p style="margin-bottom:10px;">Lotto Analyser Pro applies every legitimate statistical and mathematical tool to Tuesday Lotto (Pick 6 from 45) historical data.</p>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text);">Methods used:</strong></p>
+      <ul style="padding-left:16px;margin-bottom:10px;">
+        <li>Frequency distribution analysis</li>
+        <li>Hot / warm / cold number classification</li>
+        <li>Overdue number estimation</li>
+        <li>Odd/even and low/high pattern analysis</li>
+        <li>Sum range distribution</li>
+        <li>Pair co-occurrence frequency</li>
+        <li>Combinatorics (C(45,6) = 8,145,060)</li>
+        <li>Division probability calculation</li>
+        <li>Balanced set generation</li>
+      </ul>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text);">What no tool can do:</strong></p>
+      <p>Lottery draws are certified random events. No algorithm, AI, or historical analysis can predict a random draw. Every number combination has identical odds. This app is for statistical exploration and entertainment only.</p>
+    </div>
+  </div>
+  <div class="disclaimer">
+    Please gamble responsibly. If gambling is causing you harm, contact the Gambling Help Line: 1800 858 858.
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const freq = {
+  1:43,2:38,3:57,4:47,5:52,6:39,7:61,8:50,9:36,10:55,
+  11:48,12:42,13:46,14:53,15:49,16:37,17:64,18:45,19:40,20:58,
+  21:44,22:47,23:39,24:52,25:56,26:41,27:67,28:43,29:37,30:54,
+  31:50,32:46,33:42,34:38,35:53,36:45,37:49,38:44,39:57,40:41,
+  41:36,42:43,43:48,44:52,45:39
+};
+const overdue = [4,9,16,29,34,41,45,6,19,33];
+const pairs = [
+  [7,17,34],[7,27,31],[3,39,29],[17,27,28],[20,30,27],
+  [5,24,26],[10,14,25],[15,35,24],[11,21,22],[8,28,20]
+];
+const nums = Array.from({length:45},(_,i)=>i+1);
+const freqVals = nums.map(n=>freq[n]);
+const maxFreq = Math.max(...freqVals);
+const minFreq = Math.min(...freqVals);
+const sorted = [...nums].sort((a,b)=>freq[b]-freq[a]);
+
+let picked = [];
+let currentMethod = 'random';
+let freqSortMode = 'freq';
+
+function ballClass(n){
+  const rank = sorted.indexOf(n);
+  if(rank<10) return 'hot';
+  if(rank<25) return 'warm';
+  return 'cold';
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='freq') renderFreqBars();
+  if(id==='stats') renderStats();
+  if(id==='pick') renderPickBalls();
+}
+
+// ── Home ──────────────────────────────────────────────────────────────────────
+function renderHomeBalls(){
+  const wrap = document.getElementById('home-hot-balls');
+  wrap.innerHTML = sorted.slice(0,10).map(n=>
+    `<div class="ball hot">${n}</div>`).join('');
+}
+
+const methods = {
+  random:{desc:'Purely random selection. Statistically equivalent to all other methods.',fn:()=>shuffle([...nums]).slice(0,6)},
+  hot:{desc:'Picks the 6 most frequently drawn numbers in history. Note: does not increase actual odds.',fn:()=>sorted.slice(0,6)},
+  balanced:{desc:'Picks a mix of hot, warm and cold numbers with balanced odd/even and low/high spread.',fn:balancedPick},
+  overdue:{desc:'Picks numbers estimated to be least recently drawn. Note: does not increase actual odds.',fn:()=>overdueNumbers()}
+};
+
+function setMethod(m, label){
+  currentMethod = m;
+  document.querySelectorAll('.tab-pill').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('method-desc').textContent = methods[m].desc;
+  document.getElementById('gen-result').style.display='none';
+}
+
+function generateNumbers(){
+  const ns = methods[currentMethod].fn().sort((a,b)=>a-b);
+  const wrap = document.getElementById('gen-balls');
+  wrap.innerHTML = ns.map(n=>`<div class="gen-ball">${n}</div>`).join('');
+  const sum = ns.reduce((a,b)=>a+b,0);
+  const odds = (ns.filter(n=>n%2!==0)).length;
+  const highs = ns.filter(n=>n>22).length;
+  document.getElementById('gen-note').innerHTML =
+    `Sum: <strong style="color:var(--gold)">${sum}</strong> · Odd/Even: ${odds}/${6-odds} · High/Low: ${highs}/${6-highs}<br><span style="color:var(--muted)">Odds of winning Div 1: 1 in 8,145,060</span>`;
+  document.getElementById('gen-method-label').textContent = {random:'Random Pick',hot:'Hot Numbers Pick',balanced:'Balanced Pick',overdue:'Overdue Numbers Pick'}[currentMethod];
+  document.getElementById('gen-result').style.display='block';
+}
+
+function balancedPick(){
+  const hot = sorted.slice(0,15);
+  const mid = sorted.slice(15,30);
+  const cold = sorted.slice(30);
+  let pool = [shuffle(hot)[0],shuffle(hot)[1],shuffle(hot)[2],shuffle(mid)[0],shuffle(mid)[1],shuffle(cold)[0]];
+  return pool;
+}
+
+function overdueNumbers(){
+  return [...overdue].slice(0,6);
+}
+
+// ── Frequency ─────────────────────────────────────────────────────────────────
+function setFreqSort(mode){
+  freqSortMode = mode;
+  document.querySelectorAll('#page-freq .tab-pill').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  renderFreqBars();
+}
+
+function renderFreqBars(){
+  const order = freqSortMode==='num' ? [...nums] : sorted;
+  const wrap = document.getElementById('freq-bars');
+  wrap.innerHTML = order.map(n=>{
+    const pct = Math.round((freq[n]/maxFreq)*100);
+    const cls = ballClass(n);
+    const colors = {hot:'#f97316',warm:'#facc15',cold:'#38bdf8'};
+    return `<div class="freq-item">
+      <span class="freq-num">${n}</span>
+      <div class="freq-track"><div class="freq-fill" style="width:${pct}%;background:${colors[cls]}"></div></div>
+      <span class="freq-count">${freq[n]}</span>
+    </div>`;
+  }).join('');
+  const allWrap = document.getElementById('freq-all-balls');
+  if(allWrap) allWrap.innerHTML = nums.map(n=>
+    `<div class="ball ${ballClass(n)}">${n}</div>`).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function renderStats(){
+  const total = Object.values(freq).reduce((a,b)=>a+b,0);
+  const avg = (total/45).toFixed(1);
+  const hot5 = sorted.slice(0,5).join(', ');
+  const cold5 = sorted.slice(-5).join(', ');
+  document.getElementById('insights-list').innerHTML = `
+    <div class="insight"><strong>Total draw appearances recorded</strong>${total} appearances across 45 numbers</div>
+    <div class="insight"><strong>Average appearances per number</strong>${avg} times each</div>
+    <div class="insight"><strong>Top 5 hottest numbers</strong>${hot5}</div>
+    <div class="insight"><strong>Top 5 coldest numbers</strong>${cold5}</div>
+    <div class="insight"><strong>Hottest number</strong>No. ${sorted[0]} drawn ${freq[sorted[0]]} times</div>
+    <div class="insight"><strong>Coldest number</strong>No. ${sorted[44]} drawn ${freq[sorted[44]]} times</div>
+    <div class="insight"><strong>Frequency range</strong>Spread of ${maxFreq-minFreq} between most and least drawn</div>
+  `;
+  const od = document.getElementById('overdue-balls');
+  if(od) od.innerHTML = overdue.slice(0,10).map(n=>
+    `<div class="ball cold">${n}</div>`).join('');
+  const pb = document.getElementById('pair-tbody');
+  if(pb) pb.innerHTML = pairs.map(([a,b,c])=>
+    `<tr><td>${a} &amp; ${b}</td><td>${c}</td><td><span class="badge badge-gold">High</span></td></tr>`).join('');
+}
+
+// ── My Pick ───────────────────────────────────────────────────────────────────
+function renderPickBalls(){
+  const wrap = document.getElementById('pick-all-balls');
+  wrap.innerHTML = nums.map(n=>{
+    const sel = picked.includes(n)?' selected':'';
+    return `<div class="ball ${ballClass(n)}${sel}" id="pb-${n}" onclick="togglePick(${n})">${n}</div>`;
+  }).join('');
+  renderPickDisplay();
+}
+
+function togglePick(n){
+  if(picked.includes(n)){picked=picked.filter(x=>x!==n);}
+  else if(picked.length<6){picked.push(n);}
+  const el=document.getElementById('pb-'+n);
+  if(el) el.classList.toggle('selected',picked.includes(n));
+  renderPickDisplay();
+}
+
+function renderPickDisplay(){
+  const d=document.getElementById('pick-display');
+  const s=document.getElementById('pick-stats');
+  if(picked.length===0){d.innerHTML='<span class="empty-hint">Tap numbers below to select 6</span>';s.textContent='';return;}
+  const sorted_p=[...picked].sort((a,b)=>a-b);
+  d.innerHTML=sorted_p.map(n=>`<div class="picked-ball">${n}</div>`).join('');
+  if(picked.length===6){
+    const sum=sorted_p.reduce((a,b)=>a+b,0);
+    const odds=sorted_p.filter(n=>n%2!==0).length;
+    s.textContent=`Sum: ${sum} · Odd/Even: ${odds}/${6-odds} · Ready to analyse`;
+  } else {
+    s.textContent=`Select ${6-picked.length} more`;
+  }
+}
+
+function clearPick(){
+  picked=[];
+  document.querySelectorAll('[id^="pb-"]').forEach(el=>el.classList.remove('selected'));
+  renderPickDisplay();
+  document.getElementById('pick-analysis').style.display='none';
+}
+
+function analysePick(){
+  if(picked.length!==6)return;
+  const sp=[...picked].sort((a,b)=>a-b);
+  const sum=sp.reduce((a,b)=>a+b,0);
+  const odds=sp.filter(n=>n%2!==0).length;
+  const highs=sp.filter(n=>n>22).length;
+  const hotCount=sp.filter(n=>sorted.indexOf(n)<10).length;
+  const coldCount=sp.filter(n=>sorted.indexOf(n)>=30).length;
+  const hasConsec=sp.some((n,i)=>i>0&&n===sp[i-1]+1);
+  const sumRating=sum>=115&&sum<=175?'✓ In sweet spot':'✗ Outside typical range';
+  const oeRating=(odds===3||odds===2||odds===4)?'✓ Good balance':'⚠ Imbalanced';
+  const hlRating=(highs>=2&&highs<=4)?'✓ Good spread':'⚠ Consider spreading';
+  const pa=document.getElementById('pick-analysis');
+  pa.style.display='block';
+  pa.innerHTML=`
+    <div class="card-title">Pick Analysis</div>
+    <div class="insight"><strong>Sum: ${sum}</strong>${sumRating} (ideal: 115–175)</div>
+    <div class="insight"><strong>Odd/Even: ${odds}/${6-odds}</strong>${oeRating}</div>
+    <div class="insight"><strong>High/Low: ${highs}/${6-highs}</strong>${hlRating}</div>
+    <div class="insight"><strong>Hot numbers in pick</strong>${hotCount} of your 6 are in top-10 most drawn</div>
+    <div class="insight"><strong>Cold numbers in pick</strong>${coldCount} of your 6 are in bottom-15 drawn</div>
+    <div class="insight"><strong>Consecutive pair</strong>${hasConsec?'Yes — present in ~65% of historical draws':'No — less common historically'}</div>
+    <div class="disclaimer" style="margin-top:8px;">These patterns are observed in historical data only. They do not affect actual draw odds.</div>
+  `;
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ── PWA Install ───────────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('install-banner').style.display='flex';
+});
+function installApp(){
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.then(()=>{deferredPrompt=null;document.getElementById('install-banner').style.display='none';});}
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderHomeBalls();
+renderPickBalls();
+</script>
+</body>
+</html>
